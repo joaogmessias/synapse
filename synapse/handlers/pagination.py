@@ -344,7 +344,7 @@ class PaginationHandler:
             # gets called.
             raise Exception("limit not set")
 
-        room_token = RoomStreamToken.parse(from_token.room_key)
+        room_token = from_token.room_key
 
         with await self.pagination_lock.read(room_id):
             (
@@ -373,10 +373,13 @@ class PaginationHandler:
                     # case "JOIN" would have been returned.
                     assert member_event_id
 
-                    leave_token = await self.store.get_topological_token_for_event(
+                    leave_token_str = await self.store.get_topological_token_for_event(
                         member_event_id
                     )
-                    if RoomStreamToken.parse(leave_token).topological < max_topo:
+                    leave_token = RoomStreamToken.parse(leave_token_str)
+                    assert leave_token.topological
+
+                    if leave_token.topological < max_topo:
                         from_token = from_token.copy_and_replace(
                             "room_key", leave_token
                         )
